@@ -4,8 +4,9 @@ import matplotlib.pyplot as plt
 import random
 import seaborn as sns
 from datetime import datetime
-target = np.array([[10000],[20000]])
-tick = 0
+
+target = np.array([[100],[200]])
+
 class Robot:
     def __init__(self, blvl, temp, x,y,totald,malfc,rechargec):
         self.battery_level = blvl
@@ -13,16 +14,31 @@ class Robot:
         self.temp = temp
         self.x_position = x
         self.y_position = y
+        self.position = np.array([[self.x_position],[self.y_position]])
         self.total_distance = totald
         self.malf_count = malfc
         self.recharge_count = rechargec
         self.max_battery = 100
+        self.tick = 0
+        self.state = 'ACTIVE' #4 states : 'ACTIVE' , 'COOLING' , 'RECHARGING' , 'DONE'
+        self.mean =0
+        self.stdv = 0.5
+        #CONSTANTS
+        self.COOLING_RATE = 1.5
+        self.TEMP_INCREMENT_FACTOR = 0.2
+        self.BATTERY_RATE = 0.25
+        self.THRESHOLD_BATTERY = 40
+        self.MIN_STDV = 0.05
+        self.LOW_POWER_MODE = 20
+        self.OVERHEAT = 90
+        self.RECHARGE_RATE = 1.8
+        self.RECHARGE_HEAT = 0.011
+        self.AMBIENT_TEMP = 25
+
     def cool_down(self):
-        global tick
-        while not self.temp < self.optimum_temp:
-            self.temp -= 1.5
-            tick +=1
-        return tick
+        self.temp = max(self.temp - self.COOLING_RATE,self.AMBIENT_TEMP)
+        return self.temp
+    
     def check_malfunction(self, weights=[0.95, 0.05]):
         malfunction_chance = np.random.rand()
         if malfunction_chance < weights[1]:
@@ -30,69 +46,83 @@ class Robot:
             return True
         else:
             return False
+        
     def recharge(self):
-        self.battery_level = self.max_battery
-        self.recharge_count+=1
-        self.increase_temperature(0, 0.5)
+        self.battery_level += self.RECHARGE_RATE
+        self.increase_temperature(0, self.RECHARGE_HEAT)
         return self.battery_level 
+    
     def increase_temperature(self,dx, rcharge):
-        step_dist_heat = 0.2 * dx
-        increment = 0.2 + rcharge + step_dist_heat
+        step_dist_heat = self.TEMP_INCREMENT_FACTOR * dx
+        increment = self.TEMP_INCREMENT_FACTOR + rcharge + step_dist_heat
         self.temp += increment
-        if self.temp >=90:
-            self.check_malfunction(weights=[0.55,0.45])
-            self.cool_down()
-        else:
-            self.check_malfunction()
         return self.temp
 
     def consume_battery(self,dx):
-        battery_cost_p_meter = self.max_battery/500
-        battery_consumption = battery_cost_p_meter * np.log(1+dx)
+        battery_consumption = self.BATTERY_RATE * np.log(1+dx)
         self.battery_level = self.battery_level - battery_consumption
-        if self.battery_level <= 20:
-            self.recharge()
         return self.battery_level
 
     def move(self):
-        global tick
-        mean =0
-        stdv = 0.5
         global target
-        position = np.array([[self.x_position],[self.y_position]])
-        origin = position
-        remaining = target - position
-        while not np.linalg.norm(remaining)<0.1: #assume 1 step per 5 min
-            tick +=1
-            #moving mechanism
-            noise = np.random.normal(mean,stdv,(2,1))
-            remaining = target - position
-            #step multiplier
-            multiplier = max(1,1+(1.001-1)*((self.battery_level-30)/(self.max_battery-30)))
-            step_size = min(np.linalg.norm(remaining) * 0.1 * multiplier,2)
-            unit_vector = remaining / np.linalg.norm(remaining)
-            new_position = position + noise + step_size * unit_vector
-            #small change in position adds to total distance
-            delta_position = new_position - position
-            dposition_mag = np.linalg.norm(delta_position)
-            self.total_distance += dposition_mag
-            #stdv change once hit below 40%
-            threshold_battery = 40
-            if self.battery_level >= threshold_battery:
-                stdv = 0.5
+        remaining = target - self.position #first
+        if self.battery_level >= self.THRESHOLD_BATTERY:
+            self.stdv = 0.5
+        else:
+            self.stdv = max(self.MIN_STDV, 0.5*(self.battery_level/self.THRESHOLD_BATTERY))
+            
+        noise = np.random.normal(self.mean,self.stdv,(2,1)) #noise
+        multiplier = max(1,1+(1.001-1)*((self.battery_level-self.LOW_POWER_MODE)/(self.max_battery-self.LOW_POWER_MODE))) #step multiplier
+        step_size = min(np.linalg.norm(remaining) * 0.1 * multiplier,2)
+        unit_vector = remaining / np.linalg.norm(remaining)
+        new_position = self.position + noise + step_size * unit_vector
+        #small change in position adds to total distance
+        delta_position = new_position - self.position
+        dposition_mag = np.linalg.norm(delta_position)
+        self.total_distance += dposition_mag
+        #battery consumption
+        self.consume_battery(dposition_mag)
+        #temp increase
+        self.increase_temperature(dposition_mag, 0)
+        self.position = new_position
+        return self.position
+
+    def update(self):
+        self.tick +=1
+        if self.state == 'ACTIVE':
+            self.check_malfunction()
+            if np.linalg.norm(target - self.position) <0.1:
+                self.state = 'DONE'
+            elif self.temp >=self.OVERHEAT:
+                self.state = 'COOLING'
+            elif self.battery_level <= self.LOW_POWER_MODE:
+                self.state = 'RECHARGING'
+                self.recharge_count +=1
             else:
-                stdv = max(0.05, 0.5*(self.battery_level/threshold_battery))
-            #battery consumption
-            self.consume_battery(dposition_mag)
-            #temp increase
-            self.increase_temperature(dposition_mag, 0)
-            position = new_position
-            if np.linalg.norm(remaining)<0.1:
-                return f"Reached \n{np.round(position,2)}\nTotal distance:{round(self.total_distance,2)}\nDisplacement:{round(np.linalg.norm(target-origin),2)}\nBattery: {round(self.battery_level,2)}\nRecharge count:{self.recharge_count}\nTemperature: {self.temp}\nTicks:{tick}"
-            elif self.battery_level <= 1:
-                return f"Low battery. Current location:\n{np.round(position,2)}\nBattery: {round(self.battery_level,2)}\nTemperature: {self.temp}"
+                self.move()
+            
+                
+        elif self.state == 'COOLING':
+            self.check_malfunction(weights=[0.55,0.45])
+            self.cool_down()
+            if self.temp < self.optimum_temp:
+                if self.battery_level <=self.LOW_POWER_MODE:
+                    self.state = 'RECHARGING'
+                    self.recharge_count +=1
+                else:
+                    self.state = 'ACTIVE'
+
+        elif self.state == 'RECHARGING':
+            self.recharge()
+            if self.battery_level >= self.max_battery:
+                if self.temp >= self.OVERHEAT:
+                    self.state = 'COOLING'
+                else:
+                    self.state = 'ACTIVE'
+
+        return self.position
 
 jarvis = Robot(100, 30.0, 0, 0, 0.0, 0, 0)
 
-print(jarvis.battery_level)
-print(jarvis.move())
+while jarvis.state != 'DONE':
+    jarvis.update()
