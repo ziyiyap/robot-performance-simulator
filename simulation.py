@@ -10,12 +10,6 @@ class Simulation:
             self.log_data.append(self.robot.update())
         return 'DONE'
     def to_dataframe(self):
-        return pd.DataFrame(self.log_data)
-
-
-
-
-
-sim = Simulation(r.jarvis)
-
-print(sim.run())
+        df = pd.DataFrame(self.log_data)
+        df['chunk'] = df['tick'] // 50
+        return df

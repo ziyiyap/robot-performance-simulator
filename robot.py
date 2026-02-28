@@ -2,8 +2,9 @@ import numpy as np
 
 
 class Robot:
-    def __init__(self, blvl, temp, x,y,totald,malfc,rechargec):
-        self.target = np.array([[1],[1]])
+    def __init__(self, name, blvl, temp, x,y,totald,malfc,rechargec, TARGET):
+        self.name = name
+        self.target = TARGET
         self.battery_level = blvl
         self.optimum_temp = 60
         self.temp = temp
@@ -22,7 +23,7 @@ class Robot:
         #CONSTANTS
         self.COOLING_RATE = 1.5
         self.TEMP_INCREMENT_FACTOR = 0.2
-        self.BATTERY_RATE = 0.25
+        self.BATTERY_RATE = 0.5
         self.THRESHOLD_BATTERY = 40
         self.MIN_STDV = 0.05
         self.LOW_POWER_MODE = 20
@@ -130,5 +131,3 @@ class Robot:
                 else:
                     self.state = 'ACTIVE'
         return self.get_status(self.tick)
-
-jarvis = Robot(100, 30.0, 0, 0, 0.0, 0, 0)

@@ -1,7 +1,5 @@
-from simulation import sim
 import numpy as np
 import pandas as pd
-dataframe = sim.to_dataframe()
 
 def total_distance(df): #takes a dataframe as a parameter
     return f"Total Distance Travelled: {round(df['total_distance'].iloc[-1],2)} units"
@@ -17,7 +15,7 @@ def battery_efficiency(df):
         formula = df['tick'].iloc[-1] / df['recharge_count'].iloc[-1]
         return f"Battery Efficiency: {round(formula,2)} ticks per charge"
     else:
-        return "Maximum efficiency"
+        return f"Battery Efficiency: MAXIMUM"
 
 def longest_stable_run(df):
     stable_streaks = []
