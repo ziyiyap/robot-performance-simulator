@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import robot as r
 
@@ -20,5 +19,3 @@ class Simulation:
 sim = Simulation(r.jarvis)
 
 print(sim.run())
-print(sim.to_dataframe())
-

@@ -1,14 +1,9 @@
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import random
-import seaborn as sns
-from datetime import datetime
 
 
 class Robot:
     def __init__(self, blvl, temp, x,y,totald,malfc,rechargec):
-        self.target = np.array([[100],[200]])
+        self.target = np.array([[1],[1]])
         self.battery_level = blvl
         self.optimum_temp = 60
         self.temp = temp
