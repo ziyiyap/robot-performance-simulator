@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Robot:
-    def __init__(self, name, blvl, temp, x,y,totald,malfc,rechargec, TARGET):
+    def __init__(self, name, blvl, temp, x,y, TARGET):
         self.name = name
         self.target = TARGET
         self.battery_level = blvl
@@ -11,10 +11,10 @@ class Robot:
         self.x_position = x
         self.y_position = y
         self.position = np.array([[self.x_position],[self.y_position]])
-        self.total_distance = totald
-        self.malf_count = malfc
+        self.total_distance = 0
+        self.malf_count = 0
         self.last_malfunction = False
-        self.recharge_count = rechargec
+        self.recharge_count = 0
         self.max_battery = 100
         self.tick = 0
         self.state = 'ACTIVE' #4 states : 'ACTIVE' , 'COOLING' , 'RECHARGING' , 'DONE'
