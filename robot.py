@@ -5,10 +5,10 @@ import random
 import seaborn as sns
 from datetime import datetime
 
-target = np.array([[100],[200]])
 
 class Robot:
     def __init__(self, blvl, temp, x,y,totald,malfc,rechargec):
+        self.target = np.array([[100],[200]])
         self.battery_level = blvl
         self.optimum_temp = 60
         self.temp = temp
@@ -17,6 +17,7 @@ class Robot:
         self.position = np.array([[self.x_position],[self.y_position]])
         self.total_distance = totald
         self.malf_count = malfc
+        self.last_malfunction = False
         self.recharge_count = rechargec
         self.max_battery = 100
         self.tick = 0
@@ -43,9 +44,11 @@ class Robot:
         malfunction_chance = np.random.rand()
         if malfunction_chance < weights[1]:
             self.malf_count +=1
-            return True
+            self.last_malfunction = True
+            return self.last_malfunction
         else:
-            return False
+            self.last_malfunction = False
+            return self.last_malfunction
         
     def recharge(self):
         self.battery_level += self.RECHARGE_RATE
@@ -64,15 +67,14 @@ class Robot:
         return self.battery_level
 
     def move(self):
-        global target
-        remaining = target - self.position #first
+        remaining = self.target - self.position #first
         if self.battery_level >= self.THRESHOLD_BATTERY:
             self.stdv = 0.5
         else:
             self.stdv = max(self.MIN_STDV, 0.5*(self.battery_level/self.THRESHOLD_BATTERY))
             
         noise = np.random.normal(self.mean,self.stdv,(2,1)) #noise
-        multiplier = max(1,1+(1.001-1)*((self.battery_level-self.LOW_POWER_MODE)/(self.max_battery-self.LOW_POWER_MODE))) #step multiplier
+        multiplier = max(1,1+(1.05-1)*((self.battery_level-self.LOW_POWER_MODE)/(self.max_battery-self.LOW_POWER_MODE))) #step multiplier
         step_size = min(np.linalg.norm(remaining) * 0.1 * multiplier,2)
         unit_vector = remaining / np.linalg.norm(remaining)
         new_position = self.position + noise + step_size * unit_vector
@@ -86,12 +88,26 @@ class Robot:
         self.increase_temperature(dposition_mag, 0)
         self.position = new_position
         return self.position
+    
+    def get_status(self, tick):
+        log_status = {
+            "tick" : tick,
+            "battery" : self.battery_level,
+            "temperature" : self.temp,
+            "x" : self.position[0,0],
+            "y" : self.position[1,0],
+            "total_distance" : self.total_distance,
+            "malfunction" : self.last_malfunction,
+            "recharge_count" : self.recharge_count,
+            "state" : self.state
+        }
+        return log_status
 
     def update(self):
         self.tick +=1
         if self.state == 'ACTIVE':
             self.check_malfunction()
-            if np.linalg.norm(target - self.position) <0.1:
+            if np.linalg.norm(self.target - self.position) <0.1:
                 self.state = 'DONE'
             elif self.temp >=self.OVERHEAT:
                 self.state = 'COOLING'
@@ -100,10 +116,9 @@ class Robot:
                 self.recharge_count +=1
             else:
                 self.move()
-            
-                
+                            
         elif self.state == 'COOLING':
-            self.check_malfunction(weights=[0.55,0.45])
+            self.check_malfunction(weights=[0.90,0.10]) #NOT MALFUNCTION, MALFUNCTION
             self.cool_down()
             if self.temp < self.optimum_temp:
                 if self.battery_level <=self.LOW_POWER_MODE:
@@ -119,10 +134,6 @@ class Robot:
                     self.state = 'COOLING'
                 else:
                     self.state = 'ACTIVE'
-
-        return self.position
+        return self.get_status(self.tick)
 
 jarvis = Robot(100, 30.0, 0, 0, 0.0, 0, 0)
-
-while jarvis.state != 'DONE':
-    jarvis.update()
