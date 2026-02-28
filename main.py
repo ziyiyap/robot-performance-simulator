@@ -13,7 +13,7 @@ base_dir = Path(__file__).parent
 os.chdir(base_dir)
 robots_json = base_dir / 'robots.json'
 
-class Login:
+class UserManager:
     def __init__(self):
         self.status = 'ONLINE'
         if not robots_json.exists():
@@ -33,7 +33,9 @@ class Login:
                 for i,data in enumerate(self.robot_data):
                     if self.model in [str(i+1), data['name']]:
                         print(f"LOGGING INTO {data['name']}")
-                        time.sleep(2)
+                        self.user_robot = Robot(data['name'],100,26,0,0,data['target'])
+                        self.user_simulation = Simulation(self.user_robot) # can be improvised
+                        time.sleep(1)
                         #unfinished
                 self.user_state = 'user_interface'
 
@@ -97,6 +99,10 @@ class Login:
                     print('Invalid')
                     time.sleep(1)
                 return
+            elif self.user_input in ['3','run simulation']:
+                self.user_state = 'run_simulation'
+                return self.user_state
+            
         elif self.user_state == 'run_simulation':
             os.system('cls')
             self.user_simulation = Simulation(self.user_robot)
@@ -109,7 +115,7 @@ class Login:
             return self.user_state
         
 
-user = Login()
+user = UserManager()
 while user.status != 'OFFLINE':
     user.login()
 
