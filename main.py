@@ -3,6 +3,7 @@ import os
 import time
 import json
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from robot import Robot
@@ -39,7 +40,7 @@ class UserManager:
                 os.system('cls')
                 print(f"{'='*30}\n🤖 ROBOT MODEL MANAGER\n{'='*30}\n\n1. Select Existing Model\n2. Create New Model\n3. Exit\n")
                 model_manager_choice = str(input("Select >\n")).lower().strip()
-                if model_manager_choice in ['1', 'select existing model']:
+                if model_manager_choice == '1':
                     os.system('cls')
                     print(f"{'='*30}\n📂 EXISTING ROBOT MODELS\n{'='*30}\n")
                     for i,data in enumerate(self.robot_data):
@@ -57,10 +58,10 @@ class UserManager:
                     time.sleep(1)
                     os.system('cls')
                     return self.check_user_state()
-                elif model_manager_choice in ['2', 'create new model']:
+                elif model_manager_choice == '2':
                     self.user_state = 'add_model'
                     return self.user_state
-                elif model_manager_choice in ['3', 'exit']:
+                elif model_manager_choice == '3':
                     self.status = 'OFFLINE'
                     return self.status
                 else:
@@ -113,7 +114,7 @@ class UserManager:
             print(f"{'=' * 50}\n🤖 ROBOT OPERATIONS CONSOLE\n{'=' * 50}")
             print(f"Model: {self.user_robot.name}\n1. Robot Performance Report\n2. Graphs & Visualisations\n3. Run Simulation\n4. Change Robot Model\n5. Exit\n")
             self.user_input = str(input("Select an option >\n")).lower().strip()
-            if self.user_input in ['1','run robot']:
+            if self.user_input == '1':
                 os.system('cls')
                 #check if robot ran any simulations
                 if self.user_simulation.count == 0:
@@ -121,20 +122,23 @@ class UserManager:
                     time.sleep(2)
                     return
                 else:
-                    #average
-                    self.average_data = {k: np.mean(v) for sims in self.sim_data for k,v in sims.items()}
+                    #average (round off not done)
+                    self.average_df = pd.DataFrame(self.sim_data)
+                    self.average_data = self.average_df[list(self.average_df.columns)].mean().to_dict()
+
                     #report
                     print(f"{'='*5} {self.user_robot.name.upper()} PERFORMANCE REPORT {'='*5}")
                     print(f"Total Distance Travelled: {self.average_data['total_distance']} units\nAverage Temperature: {self.average_data['average_temp']} °C\nTotal Malfunctions: {self.average_data['malfunction_count']}\nBattery Efficiency: {self.average_data['battery_efficiency']} ticks per charge\nLongest Stable Run: {self.average_data['longest_stable']} ticks")
                     print('='*36)
                     _ = input('')
-            elif self.user_input in ['2','graphs and visualisations']:
+            elif self.user_input == '2':
                 os.system('cls')
                 if self.user_simulation.count == 0:
                     print(f"{self.user_robot.name} HAS NOT RUN ANY SIMULATIONS.\nNO GRAPHS OR VISUALISATIONS CAN BE CREATED.")
                     time.sleep(2)
                     return
                 else:
+                    #latest data, wrong
                     graph_dict = {
                         '1' : (lambda: plt.plot(self.user_dataframe['tick'],self.user_dataframe['battery']), 'Tick', 'Battery','Battery against Ticks'),
                         '2' : (lambda: plt.plot(self.user_dataframe['tick'],self.user_dataframe['temperature']), 'Tick', 'Temperature', 'Temperature against Ticks'),
@@ -155,13 +159,13 @@ class UserManager:
                         print('Invalid')
                         time.sleep(1)
                     return
-            elif self.user_input in ['3','run simulation']:
+            elif self.user_input == '3':
                 self.user_state = 'run_simulation'
                 return self.user_state
-            elif self.user_input in ['4', 'change robot model']:
+            elif self.user_input == '4':
                 os.system('cls')
                 return self.check_user_state()
-            elif self.user_input in ['5','exit']:
+            elif self.user_input == '5':
                 self.status = 'OFFLINE'
                 return self.status
             
@@ -169,9 +173,9 @@ class UserManager:
             try:
                 print(f"{"-"*30}\n🚀 RUN SIMULATION\n{"-"*30}\n\n1. Single Run\n2. Multiple Runs (Batch Mode)\n")
                 self.user_sim_count = str(input("Select >\n")).strip().lower()
-                if self.user_sim_count in ['1' or 'single run']:
+                if self.user_sim_count == '1':
                     self.user_sim_count = 1
-                elif self.user_sim_count in ['2' or 'multiple runs']:
+                elif self.user_sim_count == '2':
                     os.system('cls')
                     self.user_sim_count = int(input("Enter number of simulations to run: ").strip())
                 else:
