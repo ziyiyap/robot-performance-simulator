@@ -2,20 +2,20 @@ import numpy as np
 import pandas as pd
 
 def total_distance(df): #takes a dataframe as a parameter
-    return f"Total Distance Travelled: {round(df['total_distance'].iloc[-1],2)} units"
+    return round(df['total_distance'].iloc[-1],2)
 
 def average_temperature(df):
-    return f"Average Temperature: {round(np.mean(df['temperature']),2)} °C"
+    return round(np.mean(df['temperature']),2)
 
 def malfunction_count(df):
-    return f"Total Malfunctions: {np.sum(df['malfunction'].astype('int'))}"
+    return np.sum(df['malfunction'].astype('int'))
 
 def battery_efficiency(df):
     if df['recharge_count'].iloc[-1] != 0:
         formula = df['tick'].iloc[-1] / df['recharge_count'].iloc[-1]
-        return f"Battery Efficiency: {round(formula,2)} ticks per charge"
+        return round(formula,2)
     else:
-        return f"Battery Efficiency: MAXIMUM"
+        return df['tick'].iloc[-1]
 
 def longest_stable_run(df):
     stable_streaks = []
@@ -29,6 +29,6 @@ def longest_stable_run(df):
     stable_streaks.append(count)
         
     if len(stable_streaks) != 1:
-        return f"Longest Stable Run: {max(stable_streaks)} ticks"
+        return max(stable_streaks)
     else:
-        return f'No malfunctions! {stable_streaks[0]} ticks'
+        return stable_streaks[0]

@@ -2,12 +2,12 @@ import numpy as np
 
 
 class Robot:
-    def __init__(self, name, blvl, temp, x,y, TARGET):
+    def __init__(self, name, blvl, x,y, TARGET):
         self.name = name
         self.target = TARGET
         self.battery_level = blvl
         self.optimum_temp = 60
-        self.temp = temp
+        self.temp = 26
         self.x_position = x
         self.y_position = y
         self.position = np.array([[self.x_position],[self.y_position]])
@@ -18,11 +18,11 @@ class Robot:
         self.max_battery = 100
         self.tick = 0
         self.state = 'ACTIVE' #4 states : 'ACTIVE' , 'COOLING' , 'RECHARGING' , 'DONE'
-        self.mean =0
-        self.stdv = 0.5
         #CONSTANTS
-        self.COOLING_RATE = 1.5
-        self.TEMP_INCREMENT_FACTOR = 0.2
+        self.mean =0
+        self.stdv = 0.3
+        self.COOLING_RATE = 2.0
+        self.TEMP_INCREMENT_FACTOR = 0.1
         self.BATTERY_RATE = 0.5
         self.THRESHOLD_BATTERY = 40
         self.MIN_STDV = 0.05
@@ -31,12 +31,22 @@ class Robot:
         self.RECHARGE_RATE = 1.8
         self.RECHARGE_HEAT = 0.011
         self.AMBIENT_TEMP = 25
+        
+    def reset(self):
+            self.state = 'ACTIVE'
+            self.temp = 26
+            self.recharge_count = 0
+            self.tick = 0
+            self.total_distance = 0
+            self.malf_count = 0
+            self.position =np.array([[0],[0]])
+            self.battery_level = 100
 
     def cool_down(self):
         self.temp = max(self.temp - self.COOLING_RATE,self.AMBIENT_TEMP)
         return self.temp
     
-    def check_malfunction(self, weights=[0.95, 0.05]):
+    def check_malfunction(self, weights=[0.975, 0.025]):
         malfunction_chance = np.random.rand()
         if malfunction_chance < weights[1]:
             self.malf_count +=1
@@ -65,9 +75,9 @@ class Robot:
     def move(self):
         remaining = self.target - self.position #first
         if self.battery_level >= self.THRESHOLD_BATTERY:
-            self.stdv = 0.5
+            self.stdv = 0.3
         else:
-            self.stdv = max(self.MIN_STDV, 0.5*(self.battery_level/self.THRESHOLD_BATTERY))
+            self.stdv = max(self.MIN_STDV, 0.3*(self.battery_level/self.THRESHOLD_BATTERY))
             
         noise = np.random.normal(self.mean,self.stdv,(2,1)) #noise
         multiplier = max(1,1+(1.05-1)*((self.battery_level-self.LOW_POWER_MODE)/(self.max_battery-self.LOW_POWER_MODE))) #step multiplier
@@ -114,7 +124,7 @@ class Robot:
                 self.move()
                             
         elif self.state == 'COOLING':
-            self.check_malfunction(weights=[0.90,0.10]) #NOT MALFUNCTION, MALFUNCTION
+            self.check_malfunction(weights=[0.95,0.05]) #NOT MALFUNCTION, MALFUNCTION
             self.cool_down()
             if self.temp < self.optimum_temp:
                 if self.battery_level <=self.LOW_POWER_MODE:

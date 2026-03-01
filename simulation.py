@@ -6,10 +6,12 @@ class Simulation:
         self.count = 0
         self.log_data = []
     def run(self):
+        self.log_data.clear()
         self.count +=1
         while self.robot.state != 'DONE': #each loop, 1 tick
             self.log_data.append(self.robot.update())
         return 'DONE'
+        
     def to_dataframe(self):
         df = pd.DataFrame(self.log_data)
         df['chunk'] = df['tick'] // 50
