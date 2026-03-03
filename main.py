@@ -103,6 +103,11 @@ class UserManager:
             try:
                 if self.robot_name.strip() == '':
                     return self.check_user_state()
+                for rdict in self.robot_data:
+                    if rdict['name'] == self.robot_name.strip():
+                        print(f"{rdict['name']} ALREADY EXISTS!")
+                        time.sleep(0.5)
+                        return self.check_user_state()
                 else:
                     self.user_target = str(input('\nENTER TARGET POSITION:\n USAGE: <X_COORD>, <Y_COORD>\n> ')).strip().split(',')
                     self.user_target = np.array([[int(self.user_target[0])], [int(self.user_target[1])]])
