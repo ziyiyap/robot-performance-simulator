@@ -150,7 +150,6 @@ class UserManager:
                     self.average_data = self.average_data.round(2).to_dict()
 
                     #report
-                    print(self.sim_data)
                     self.report_header = f"{'='*5} {self.user_robot.name.upper()} PERFORMANCE REPORT {'='*5}"
                     print(f"{'='*5} {self.user_robot.name.upper()} PERFORMANCE REPORT {'='*5}")
                     print(f"Total Distance Travelled: {self.average_data['total_distance']} units\nAverage Temperature: {self.average_data['average_temp']} °C\nTotal Malfunctions: {self.average_data['malfunction_count']}\nBattery Efficiency: {self.average_data['battery_efficiency']} ticks per charge\nLongest Stable Run: {self.average_data['longest_stable']} ticks")
@@ -163,7 +162,8 @@ class UserManager:
                     time.sleep(2)
                     return
                 else:
-                    self.single_or_avg = str(input("1. Single\n2. Average\n"))
+                    print(f"{'-' * 30}\n📈 GRAPHS & VISUALIZATIONS\n{'-' * 30}\n1. Single Run\n2. Average Runs\n")
+                    self.single_or_avg = str(input("Select > "))
                     if self.single_or_avg == '1':
                         self.graph_df = pd.DataFrame(self.user_dataframe) #gets the latest data
                         self.plot_groupby = self.graph_df.groupby('chunk')['malfunction'].sum()
@@ -221,10 +221,18 @@ class UserManager:
                     os.system('cls')
                     self.user_sim_count = int(input("Enter number of simulations to run: ").strip())
                 elif self.user_sim_count == '3':
-                    self.sim_data.clear()
-                    self.user_simulation.count = 0
-                    self.user_state = 'user_interface'
-                    return self.user_state
+                    if self.user_simulation.count != 0:
+                        self.time_series_data.clear()
+                        self.sim_data.clear()
+                        self.user_simulation.count = 0
+                        self.user_state = 'user_interface'
+                        return self.user_state
+                    else:
+                        os.system('cls')
+                        print("SIMULATION COUNT IS ALREADY CLEARED.")
+                        time.sleep(0.5)
+                        self.user_state = 'user_interface'
+                        return self.user_state
                 else:
                     print("Invalid option.")
                     self.user_state = 'user_interface'
