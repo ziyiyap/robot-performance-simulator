@@ -74,6 +74,7 @@ class UserManager:
             for i,data in enumerate(self.robot_data):
                 if self.model in [str(i+1), data['name']]:
                     print(f"LOGGING INTO {data['name']}")
+                    self.time_series_data.clear()
                     self.sim_data.clear()
                     self.user_robot = Robot(data['name'],100,0,0,data['target'])
                     self.user_simulation = Simulation(self.user_robot)
