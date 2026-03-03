@@ -31,8 +31,13 @@ class UserManager:
             self.user_state = 'add_model'
             return self.user_state
         elif robots_json.exists():
-            with open(robots_json, encoding='utf-8') as f:
-                self.robot_data = json.load(f) #list of dicts
+            try:
+                with open(robots_json, encoding='utf-8') as f:
+                    self.robot_data = json.load(f) #list of dicts
+            except json.JSONDecodeError:
+                with open(robots_json,'w',encoding='utf-8') as f:
+                    self.robot_data = []
+                    json.dump([],f)
             if not self.robot_data:
                 print('NO EXISTING MODELS.')
                 self.user_state = 'add_model'
@@ -105,7 +110,7 @@ class UserManager:
                 time.sleep(1)
                 os.system('cls')
                 return
-            self.model_confirmation = str(input('CONFIRM? (Y/N)\n'))
+            self.model_confirmation = str(input('CONFIRM? (Y/N)\n')).strip()
             if self.model_confirmation.lower() == 'y':
                 self.user_robot = Robot(self.robot_name, 100, 0, 0,self.user_target)
                 self.user_simulation = Simulation(self.user_robot)
@@ -118,14 +123,14 @@ class UserManager:
                 self.robot_data.append(json_input)
                 with open(robots_json,'w',encoding='utf-8') as file:
                     json.dump(self.robot_data, file)
-                print(f"✅ MODEL {self.user_robot.name} CREATED SUCCESSFULLY.")
+                print(f"\n✅ MODEL {self.user_robot.name} CREATED SUCCESSFULLY.")
                 self.user_modelc_choice = str(input("1. Use This Model Now\n2. Back to Main Menu\n")).lower().strip()
                 if self.user_modelc_choice in ['1', 'use this model now']:
                     self.user_state = 'run_simulation'
                     return self.user_state,self.user_robot
                 else:
                     return self.check_user_state()
-            elif self.model_confirmation == 'N':
+            elif self.model_confirmation.lower() == 'n':
                 self.user_state = 'add_model'
                 return self.user_state
         
@@ -181,7 +186,7 @@ class UserManager:
                         return self.user_state
                     os.system('cls')
                     print(f"{'-' * 30}\n📈 GRAPHS & VISUALIZATIONS\n{'-' * 30}\n1. Battery against Ticks\n2. Temperature against Ticks\n3. Malfunctions per Chunk\n4. Robot Path (Y against X)\n")
-                    self.graph_input = str(input("Select >\n"))
+                    self.graph_input = str(input("Select >\n")).strip()
                     graph_dict = {
                     '1' : (lambda: plt.plot(self.graph_df['tick'],self.graph_df['battery']), 'Tick', 'Battery','Battery against Ticks'),
                     '2' : (lambda: plt.plot(self.graph_df['tick'],self.graph_df['temperature']), 'Tick', 'Temperature', 'Temperature against Ticks'),
@@ -197,6 +202,7 @@ class UserManager:
                         plt.title(graph_dict[self.graph_input][3])
                         plt.grid(True)
                         plt.show()
+                        plt.close()
                     else:
                         print('Invalid')
                         time.sleep(1)
@@ -263,7 +269,7 @@ class UserManager:
                     })
 
             os.system('cls')
-            _ = input(f"Simulation Complete ✅\nTotal Runs: {self.user_sim_count}\n\nEnter any key to continue...\n")
+            self._ = input(f"Simulation Complete ✅\nTotal Runs: {self.user_sim_count}\n\nEnter any key to continue...\n")
             self.user_state = 'user_interface'
             return self.user_state
         
