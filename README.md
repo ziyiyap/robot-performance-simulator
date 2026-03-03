@@ -17,11 +17,5 @@ Features:
 
 
 Modules used:
-
-
-Numpy - matrices to coordinate x,y values
-
-Pandas - data analysis
-
-Matplotlib - Graphing
+numpy,matplotlib,pandas,json,pathlib
 
