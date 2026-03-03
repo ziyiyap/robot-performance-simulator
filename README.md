@@ -1,6 +1,6 @@
 # Robot Performance Simulator
 
-A model that goes to the target location using unit vectors, noise included, hence the model will have jitter movements.
+A model that goes to the target location using unit vectors, noise included.
 
 Features:
 
